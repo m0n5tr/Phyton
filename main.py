@@ -24,36 +24,39 @@ class ErrorFile:
 def print_hi():
     sh = shelve
     try:
-        all_files = os.listdir(DIRECTORY)  # список файлов
-        need_files = filter(lambda x: x.endswith(EXTENSION), all_files)  # фильтр
-        error_files = set()
-        sh = shelve.open(DIRECTORY + "\\" + "last_error_file", "c")
+        sh = shelve.open(DIRECTORY + "\\" + "last_error_file", "c")  # файл хранения данных
         try:
             saved_time = sh[KEY_LAST_TIME]
-        except KeyError:
+        except KeyError:  # в случае если ещё нет файла
             saved_time = 0.0
+        all_files = os.listdir(DIRECTORY)  # список файлов
+        need_files = filter(lambda x:
+                            x.endswith(EXTENSION) &  # по расширению
+                            (os.path.getsize(DIRECTORY + "\\" + x) < MIN_FILE_SIZE) &  # по объёму
+                            (os.path.getctime(DIRECTORY + "\\" + x) > saved_time),  # по времени
+                            all_files)
+        error_files = set()
         last_saved_time = saved_time
         for f in need_files:  # цикл по фильтру
             file = DIRECTORY + "\\" + f
             size = os.path.getsize(file)  # считывание объёма
             c_time = os.path.getctime(file)
-            if size < MIN_FILE_SIZE:
-                if c_time > saved_time:
-                    error_files.add(ErrorFile(f, str(size)))
-                    if last_saved_time < c_time:
-                        last_saved_time = c_time
-        if len(error_files) > 0:
-            root = Tk()
-            root.title("Ошибка файла")
-            files_list = Listbox(width=100)
+            error_files.add(ErrorFile(f, str(size)))
+            # максимальное время создания файла для фильтра на следующий запуск
+            last_saved_time = max(last_saved_time, c_time)
+        if len(error_files) > 0:  # если кол-во файлов больше 0
+            sh[KEY_LAST_TIME] = last_saved_time  # запись максимального времени создания ошибочного файла
+            root = Tk()  # создание окна
+            root.title("Ошибка файла")  # заголовок окна
+            files_list = Listbox(width=100)  # список для вывода
 
-            for f in error_files:
+            for f in error_files:  # заполнение списка
                 files_list.insert(END, f.print())
             files_list.pack()
             root.mainloop()
-            sh[KEY_LAST_TIME] = last_saved_time
     except FileNotFoundError:  # обработка ошибок
-        print("Путь не найден: " + DIRECTORY)
+        root = Tk()
+        root.title("Ошибка - Путь не найден: " + DIRECTORY)
     finally:
         sh.close()
 
