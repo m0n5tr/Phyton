@@ -2,15 +2,14 @@ import os
 from tkinter import *
 
 MIN_FILE_SIZE = 50
-
 EXTENSION = '.txt'
 DIRECTORY = 'C:\\some_dir'
 
 
 class ErrorFile:
     def __init__(self, name, size):
-        self.name = name  # устанавливаем имя
-        self.size = size  # устанавливаем возраст
+        self.name = name
+        self.size = size
 
     name = ""
     size = ""
@@ -28,7 +27,7 @@ def print_hi():
             size = os.path.getsize(DIRECTORY + "\\" + f)  # считывание объёма
             if size < MIN_FILE_SIZE:
                 error_files.add(ErrorFile(f, str(size)))
-        if error_files.__sizeof__() > 0:
+        if len(error_files) > 0:
             root = Tk()
             root.title("Ошибка файла")
             files_list = Listbox(width=100)
